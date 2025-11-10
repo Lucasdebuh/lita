@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lista de Presença</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f4;
+        }
+        .container {
+            max-width: 600px;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        input[type="text"], input[type="number"] {
+            width: 100%;
+            padding: 10px;
+            margin: 5px 0 15px 0;
+            display: inline-block;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #listaConvidados {
+            list-style-type: none;
+            padding: 0;
+            margin-top: 20px;
+        }
+        #listaConvidados li {
+            background: #eee;
+            margin-top: 8px;
+            padding: 10px;
+            border-radius: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .remover-btn {
+            background-color: #f44336;
+            padding: 5px 10px;
+        }
+        .remover-btn:hover {
+            background-color: #da190b;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Confirmação de Presença</h2>
+
+    <form id="formPresenca">
+        <label for="nomeCompleto"><b>Nome Completo:</b></label>
+        <input type="text" id="nomeCompleto" name="nomeCompleto" required>
+
+        <label for="acompanhantes"><b>Número de Acompanhantes:</b></label>
+        <input type="number" id="acompanhantes" name="acompanhantes" min="0" value="0" required>
+
+        <button type="submit">Confirmar Presença</button>
+    </form>
+
+    <hr>
+
+    <h3>Lista de Confirmados (Local)</h3>
+    <ul id="listaConvidados">
+        </ul>
+</div>
+
+<script>
+    // Chave para armazenar os dados no localStorage
+    const STORAGE_KEY = 'listaDeConvidados';
+
+    // Função para carregar os convidados do localStorage
+    function carregarConvidados() {
+        const dadosSalvos = localStorage.getItem(STORAGE_KEY);
+        return dadosSalvos ? JSON.parse(dadosSalvos) : [];
+    }
+
+    // Função para salvar os convidados no localStorage
+    function salvarConvidados(convidados) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(convidados));
+    }
+
+    // Função para renderizar a lista na página
+    function renderizarLista() {
+        const convidados = carregarConvidados();
+        const listaUI = document.getElementById('listaConvidados');
+        listaUI.innerHTML = ''; // Limpa a lista existente
+
+        if (convidados.length === 0) {
+            listaUI.innerHTML = '<li>Nenhuma presença confirmada ainda.</li>';
+            return;
+        }
+
+        convidados.forEach((item, index) => {
+            const li = document.createElement('li');
+            const totalPessoas = parseInt(item.acompanhantes) + 1; // Pessoa + Acompanhantes
+            
+            li.innerHTML = `
+                <span>
+                    **${item.nome}** (Total de Pessoas: ${totalPessoas})
+                </span>
+                <button class="remover-btn" data-index="${index}">Remover</button>
+            `;
+            listaUI.appendChild(li);
+        });
+
+        // Adiciona event listeners para os botões de remover
+        document.querySelectorAll('.remover-btn').forEach(button => {
+            button.addEventListener('click', removerConvidado);
+        });
+    }
+
+    // Função para adicionar um novo convidado
+    document.getElementById('formPresenca').addEventListener('submit', function(e) {
+        e.preventDefault(); // Impede o recarregamento da página
+
+        const nome = document.getElementById('nomeCompleto').value.trim();
+        const acompanhantes = document.getElementById('acompanhantes').value;
+
+        if (nome) {
+            const novoConvidado = {
+                nome: nome,
+                acompanhantes: acompanhantes
+            };
+
+            const convidados = carregarConvidados();
+            convidados.push(novoConvidado);
+            salvarConvidados(convidados);
+            
+            // Limpa o formulário e atualiza a lista
+            document.getElementById('nomeCompleto').value = '';
+            document.getElementById('acompanhantes').value = '0';
+            renderizarLista();
+        } else {
+            alert('Por favor, preencha o nome completo.');
+        }
+    });
+
+    // Função para remover um convidado
+    function removerConvidado(e) {
+        const index = e.target.getAttribute('data-index');
+        let convidados = carregarConvidados();
+        
+        // Remove 1 item a partir do índice clicado
+        convidados.splice(index, 1); 
+        
+        salvarConvidados(convidados);
+        renderizarLista();
+    }
+
+    // Carrega a lista ao iniciar a página
+    window.onload = renderizarLista;
+
+</script>
+</body>
+</html>
